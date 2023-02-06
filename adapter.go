@@ -1,6 +1,8 @@
 package log
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -84,7 +86,13 @@ func (zapAdapter *zapAdapter) Build() {
 	conf := zap.NewProductionEncoderConfig()
 	conf.EncodeTime = zapcore.ISO8601TimeEncoder
 	cnf := zapcore.NewJSONEncoder(conf)
-	core := zapcore.NewCore(cnf, w, level)
+    
+    consoleEncoder := zapcore.NewConsoleEncoder(conf)
+
+	core := zapcore.NewTee(
+        zapcore.NewCore(cnf, w, level),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
+    )
 
 	zapAdapter.logger = zap.New(core)
 	if zapAdapter.Caller {
