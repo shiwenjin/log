@@ -6,7 +6,7 @@ import (
 )
 
 func TestDebug(t *testing.T) {
-	Init("./test.log", DebugLevel, true)
+	Init("", DebugLevel, false, SetCaller(true))
 
 	Debug("test test test")
 	Debugf("test")

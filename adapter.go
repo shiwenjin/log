@@ -65,8 +65,6 @@ func (zapAdapter *zapAdapter) createLumberjackHook() *lumberjack.Logger {
 }
 
 func (zapAdapter *zapAdapter) Build() {
-	w := zapcore.AddSync(zapAdapter.createLumberjackHook())
-
 	var level zapcore.Level
 	switch zapAdapter.Level {
 	case "debug":
@@ -83,16 +81,23 @@ func (zapAdapter *zapAdapter) Build() {
 		level = zap.InfoLevel
 	}
 
-	conf := zap.NewProductionEncoderConfig()
-	conf.EncodeTime = zapcore.ISO8601TimeEncoder
-	cnf := zapcore.NewJSONEncoder(conf)
-    
-    consoleEncoder := zapcore.NewConsoleEncoder(conf)
+	encoderConfig := zap.NewProductionEncoderConfig()
+	//指定时间格式
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05")
+	//按级别显示不同颜色，不需要的话取值zapcore.CapitalLevelEncoder就可以了
+	//encoderConfig.EncodeCaller = zapcore.FullCallerEncoder      	//显示完整文件路径
+	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+	//NewJSONEncoder()输出json格式，
+	//jsonEncoder := zapcore.NewJSONEncoder(encoderConfig)
+
+	//NewConsoleEncoder()输出普通文本格式
+	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
 
 	core := zapcore.NewTee(
-        zapcore.NewCore(cnf, w, level),
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
-    )
+		//zapcore.NewCore(jsonEncoder, zapcore.AddSync(zapAdapter.createLumberjackHook()), level),
+		zapcore.NewCore(consoleEncoder, zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(zapAdapter.createLumberjackHook())), level),
+	)
 
 	zapAdapter.logger = zap.New(core)
 	if zapAdapter.Caller {
