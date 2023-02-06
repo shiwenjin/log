@@ -1,4 +1,4 @@
-module github.com/georgehao/log
+module github.com/shiwenjin/log
 
 go 1.13
 
